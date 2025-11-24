@@ -1,12 +1,13 @@
+
 import React, { useState } from 'react';
-import { Plus, Trash2, TrendingDown, DollarSign, PieChart as PieChartIcon, List } from 'lucide-react';
+import { Plus, Trash2, TrendingDown, DollarSign, PieChart as PieChartIcon, List, CreditCard } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { Expense } from '../types';
 
 const INITIAL_EXPENSES: Expense[] = [
-  { id: '1', description: 'Conta de Luz', amount: 150.50, category: 'Moradia', date: new Date().toISOString() },
-  { id: '2', description: 'Internet Fibra', amount: 99.90, category: 'Serviços', date: new Date().toISOString() },
-  { id: '3', description: 'Mercado Semanal', amount: 450.00, category: 'Alimentação', date: new Date().toISOString() },
+  { id: '1', description: 'Conta de Luz', amount: 150.50, category: 'Moradia', date: new Date().toISOString(), paymentMethod: 'debit' },
+  { id: '2', description: 'Internet Fibra', amount: 99.90, category: 'Serviços', date: new Date().toISOString(), paymentMethod: 'credit' },
+  { id: '3', description: 'Mercado Semanal', amount: 450.00, category: 'Alimentação', date: new Date().toISOString(), paymentMethod: 'credit' },
 ];
 
 const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'];
@@ -15,6 +16,7 @@ const ExpenseDashboard: React.FC = () => {
   const [expenses, setExpenses] = useState<Expense[]>(INITIAL_EXPENSES);
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'credit' | 'debit' | 'cash'>('credit');
 
   const handleAddExpense = (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,12 +27,14 @@ const ExpenseDashboard: React.FC = () => {
       description,
       amount: parseFloat(amount),
       category: 'Outros', // Simplification for the prompt
-      date: new Date().toISOString()
+      date: new Date().toISOString(),
+      paymentMethod: paymentMethod
     };
 
     setExpenses([newExpense, ...expenses]);
     setDescription('');
     setAmount('');
+    setPaymentMethod('credit');
   };
 
   const handleDelete = (id: string) => {
@@ -44,6 +48,15 @@ const ExpenseDashboard: React.FC = () => {
     name: exp.description,
     value: exp.amount
   }));
+
+  const getPaymentLabel = (method: string) => {
+    switch (method) {
+      case 'credit': return 'Crédito';
+      case 'debit': return 'Débito';
+      case 'cash': return 'Dinheiro';
+      default: return method;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -85,7 +98,18 @@ const ExpenseDashboard: React.FC = () => {
               placeholder="O que você comprou?"
               className="w-full p-3 bg-gray-50 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
             />
-            <div className="flex gap-2">
+            
+            <div className="grid grid-cols-2 gap-3">
+              <select
+                value={paymentMethod}
+                onChange={(e) => setPaymentMethod(e.target.value as 'credit' | 'debit' | 'cash')}
+                className="w-full p-3 bg-gray-50 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-gray-700"
+              >
+                <option value="credit">Crédito</option>
+                <option value="debit">Débito</option>
+                <option value="cash">Dinheiro</option>
+              </select>
+
               <input
                 type="number"
                 value={amount}
@@ -93,13 +117,15 @@ const ExpenseDashboard: React.FC = () => {
                 placeholder="Valor (R$)"
                 className="w-full p-3 bg-gray-50 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
               />
-              <button 
-                type="submit"
-                className="bg-emerald-600 hover:bg-emerald-700 text-white p-3 rounded-lg shadow-md transition-colors flex items-center justify-center min-w-[60px]"
-              >
-                <Plus className="w-6 h-6" />
-              </button>
             </div>
+
+            <button 
+              type="submit"
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-3 rounded-lg shadow-md transition-colors flex items-center justify-center gap-2 mt-1"
+            >
+              <Plus className="w-5 h-5" />
+              Adicionar Conta
+            </button>
           </form>
         </div>
 
@@ -146,7 +172,14 @@ const ExpenseDashboard: React.FC = () => {
               <li key={expense.id} className="p-4 flex justify-between items-center hover:bg-gray-50 transition-colors">
                 <div className="flex flex-col">
                   <span className="font-medium text-gray-800">{expense.description}</span>
-                  <span className="text-xs text-gray-400">{expense.category}</span>
+                  <div className="flex items-center gap-2 text-xs text-gray-400 mt-1">
+                    <span>{expense.category}</span>
+                    <span>•</span>
+                    <span className="flex items-center gap-1 bg-gray-100 px-2 py-0.5 rounded text-gray-500 font-medium">
+                      <CreditCard className="w-3 h-3" />
+                      {getPaymentLabel(expense.paymentMethod)}
+                    </span>
+                  </div>
                 </div>
                 <div className="flex items-center gap-4">
                   <span className="font-semibold text-red-500">
